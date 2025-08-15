@@ -7,7 +7,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import styles from './dashboard.module.css'; // Usa o novo CSS do dashboard
+import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
   const [user, loading] = useAuthState(auth);
@@ -35,7 +35,6 @@ export default function DashboardPage() {
     setPosicao('');
     setDestino('');
     setTags('');
-    // Reseta o input de arquivo visualmente
     const fileInput = document.getElementById('file-input') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -100,7 +99,7 @@ export default function DashboardPage() {
       <div className={styles.panel}>
         <header className={styles.header}>
           <h1 className={styles.title}>Painel de Administração</h1>
-          <p className={styles.subtitle}>Adicionar novo Pixel para {user?.email}</p>
+          <p className={styles.subtitle}>Adicionar novo Pixel !</p>
         </header>
 
         <form onSubmit={handleUpload}>
@@ -114,15 +113,30 @@ export default function DashboardPage() {
               {videoFile && <span className={styles.fileName}>{videoFile.name}</span>}
             </div>
 
+            {/* ========== MUDANÇA AQUI ========== */}
             <div className={styles.formGroup}>
               <label htmlFor="mapa" className={styles.label}>Mapa</label>
-              <input id="mapa" type="text" value={mapa} onChange={e => setMapa(e.target.value)} className={styles.input} />
+              <select id="mapa" value={mapa} onChange={e => setMapa(e.target.value)} className={styles.select}>
+                <option value="mirage">Mirage</option>
+                <option value="inferno">Inferno</option>
+                <option value="dust2">Dust 2</option>
+                <option value="nuke">Nuke</option>
+                <option value="overpass">Overpass</option>
+                <option value="vertigo">Vertigo</option>
+                <option value="ancient">Ancient</option>
+              </select>
             </div>
 
             <div className={styles.formGroup}>
               <label htmlFor="acao" className={styles.label}>Ação</label>
-              <input id="acao" type="text" value={acao} onChange={e => setAcao(e.target.value)} className={styles.input} />
+              <select id="acao" value={acao} onChange={e => setAcao(e.target.value)} className={styles.select}>
+                <option value="smoke">Smoke</option>
+                <option value="flash">Flash</option>
+                <option value="molotov">Molotov</option>
+                <option value="hegrenade">HE Grenade</option>
+              </select>
             </div>
+            {/* ========== FIM DA MUDANÇA ========== */}
 
             <div className={styles.formGroup}>
               <label htmlFor="posicao" className={styles.label}>Posição Inicial</label>

@@ -1,16 +1,17 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
-import { Geist } from "next/font/google"; // Remove Geist_Mono
+// Troque a importação da fonte
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Configure a nova fonte
+const inter = Inter({
   subsets: ["latin"],
+  variable: '--font-inter', // Opcional: usar como variável CSS
 });
 
-// Remove a declaração da geistMono
-
 export const metadata: Metadata = {
-  title: "CS2 Pixels", // Um pouco mais de marketing no título
+  title: "CS2 Pixels",
   description: "O seu consultor de pixels inteligente para CS2.",
 };
 
@@ -20,9 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      {/* Aplica apenas a variável da fonte principal */}
-      <body className={geistSans.variable}>
+    // Aplique a classe da nova fonte
+    <html lang="pt-BR" className={inter.className}>
+      <body>
         {children}
       </body>
     </html>

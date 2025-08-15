@@ -1,4 +1,4 @@
-# 🚀 Guia Rápido - CS2 Pixels
+# 🚀 Guia Rápido - CS2 Pixels (Atualizado)
 
 ## ⚡ Comandos Essenciais
 
@@ -45,8 +45,8 @@ npm run dev
 ```
 src/
 ├── app/
-│   ├── page.tsx              # Página principal (busca)
-│   ├── api/search/route.ts   # API de busca
+│   ├── page.tsx              # Página principal (sistema de busca)
+│   ├── api/search/route.ts   # API de busca otimizada
 │   └── admin/                # Área administrativa
 │       ├── login/page.tsx    # Login
 │       └── dashboard/page.tsx # Dashboard
@@ -54,7 +54,7 @@ src/
     └── firebase.ts           # Configuração Firebase
 ```
 
-## 🔍 Como Testar a Busca
+## 🔍 Como Testar o Novo Sistema de Busca
 
 ### 1. Adicione um Vídeo via Dashboard
 - Acesse `/admin/dashboard`
@@ -63,47 +63,64 @@ src/
 - Preencha: mapa, posição, ação, destino
 - Adicione tags relevantes
 
-### 2. Teste a Busca
+### 2. Teste a Busca Estruturada
 - Vá para a página principal
-- Digite termos relacionados às tags do vídeo
-- Ex: "mirage base tr smoke" se o vídeo tiver essas tags
+- **Selecione o mapa** (ex: Mirage)
+- **Selecione a ação** (ex: Smoke)
+- **Digite texto opcional** (ex: "base tr janela")
+- Clique em buscar
 
 ## 🛠️ Desenvolvimento Rápido
 
 ### Para Modificar a Busca
 ```typescript
 // src/app/api/search/route.ts
-const keywords = searchTerm
-  .toLowerCase()
-  .split(/\s+/)                     // Divide por espaços
-  .filter((word) => word.length > 2); // Remove palavras pequenas
+// Adicione novos filtros obrigatórios
+const queryConstraints = [
+  where('mapa', '==', mapa.toLowerCase()),
+  where('acao', '==', acao.toLowerCase()),
+  // Adicione novos filtros aqui
+  where('novo_campo', '==', novoValor),
+];
 ```
 
-### Para Adicionar Novos Campos
+### Para Adicionar Novos Filtros
 ```typescript
 // 1. Adicione na interface
 interface VideoResult {
-  novo_campo: string;
+  novo_filtro: string;
 }
 
-// 2. Atualize o dashboard
-const [novoCampo, setNovoCampo] = useState('');
+// 2. Atualize o frontend
+const [selectedNovoFiltro, setSelectedNovoFiltro] = useState('');
 
-// 3. Salve no Firestore
-const videoData = {
-  novo_campo: novoCampo,
-  // ... outros campos
-};
+// 3. Adicione no formulário
+<select value={selectedNovoFiltro} onChange={...}>
+  <option value="opcao1">Opção 1</option>
+  <option value="opcao2">Opção 2</option>
+</select>
+
+// 4. Envie para a API
+body: JSON.stringify({
+  mapa: selectedMap,
+  acao: selectedAction,
+  novo_filtro: selectedNovoFiltro,
+  textoBusca: searchTerm,
+})
 ```
 
 ### Para Modificar a Interface
 ```typescript
 // src/app/page.tsx
-return (
-  <div className={styles.container}>
-    {/* Seu novo conteúdo aqui */}
+// Altere a proporção dos painéis
+<div className={styles.splitScreen}>
+  <div className={styles.leftPanel}>  {/* Controles */}
+    {/* Seu conteúdo aqui */}
   </div>
-);
+  <div className={styles.rightPanel}> {/* Vídeo */}
+    {/* Seu conteúdo aqui */}
+  </div>
+</div>
 ```
 
 ## 🎨 Estilos (CSS Modules)
@@ -126,6 +143,26 @@ return (
     Texto azul
   </div>
 );
+```
+
+### Layout de Painéis
+```css
+/* page.module.css */
+.splitScreen {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.leftPanel {
+  flex: 0 0 30%;  /* 30% da largura */
+  background: #f8fafc;
+}
+
+.rightPanel {
+  flex: 0 0 70%;  /* 70% da largura */
+  background: #ffffff;
+}
 ```
 
 ## 🔐 Autenticação
@@ -155,9 +192,9 @@ useEffect(() => {
 ### Estrutura da Coleção `videos`
 ```typescript
 {
-  mapa: "mirage",
+  mapa: "mirage",           // Filtro obrigatório
+  acao: "smoke",            // Filtro obrigatório
   posicao_inicial: "base tr",
-  acao: "smoke",
   destino: "janela",
   url_video: "https://...",
   tags: ["mirage", "base", "tr", "smoke", "janela"],
@@ -165,13 +202,20 @@ useEffect(() => {
 }
 ```
 
-### Consulta de Busca
+### Nova Consulta de Busca
 ```typescript
-const q = query(
-  collection(db, 'videos'),
-  where('tags', 'array-contains-any', keywords),
-  limit(1)
-);
+// Busca em camadas
+const queryConstraints = [
+  where('mapa', '==', mapa.toLowerCase()),      // Filtro obrigatório
+  where('acao', '==', acao.toLowerCase()),      // Filtro obrigatório
+];
+
+// Filtro opcional por tags
+if (textKeywords.length > 0) {
+  queryConstraints.push(where('tags', 'array-contains-any', textKeywords));
+}
+
+const q = query(collection(db, 'videos'), ...queryConstraints, limit(1));
 ```
 
 ## 🚨 Erros Comuns
@@ -189,21 +233,36 @@ const q = query(
 - Verifique as regras de segurança do Firestore
 - Confirme se o usuário está autenticado
 
+### "Mapa e Ação são obrigatórios"
+- Verifique se os dropdowns estão sendo preenchidos
+- Confirme se os valores estão sendo enviados para a API
+
 ## 📱 Responsividade
 
 ### Breakpoints Recomendados
 ```css
 /* Mobile First */
-.container { width: 100%; }
+.splitScreen {
+  flex-direction: column;
+}
+
+.leftPanel, .rightPanel {
+  flex: 0 0 100%;
+}
 
 /* Tablet */
 @media (min-width: 768px) {
-  .container { width: 80%; }
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  .container { width: 60%; }
+  .splitScreen {
+    flex-direction: row;
+  }
+  
+  .leftPanel {
+    flex: 0 0 30%;
+  }
+  
+  .rightPanel {
+    flex: 0 0 70%;
+  }
 }
 ```
 
@@ -211,7 +270,7 @@ const q = query(
 
 ### 1. Criar Branch
 ```bash
-git checkout -b feature/nova-funcionalidade
+git checkout -b feature/novo-filtro
 ```
 
 ### 2. Desenvolver
@@ -224,12 +283,12 @@ npm run lint # Verifique qualidade
 ### 3. Commit
 ```bash
 git add .
-git commit -m "feat: adiciona nova funcionalidade de busca"
+git commit -m "feat: adiciona novo filtro de busca"
 ```
 
 ### 4. Push e Pull Request
 ```bash
-git push origin feature/nova-funcionalidade
+git push origin feature/novo-filtro
 # Crie PR no GitHub/GitLab
 ```
 
@@ -268,6 +327,26 @@ git push origin feature/nova-funcionalidade
 - Compartilhe o erro específico
 - Mostre o código relevante
 
+## 🔧 Dicas para o Novo Sistema
+
+### 1. Entenda a Estrutura de Filtros
+- **Mapa e Ação** são sempre obrigatórios
+- **Texto** é opcional e refina a busca
+- A busca funciona em camadas para melhor performance
+
+### 2. Para Adicionar Novos Filtros
+- Adicione no frontend (dropdown/input)
+- Atualize a interface TypeScript
+- Modifique a API para receber o novo campo
+- Ajuste a query do Firestore
+
+### 3. Para Modificar o Layout
+- O sistema usa `flexbox` para dividir a tela
+- `leftPanel` (30%) e `rightPanel` (70%)
+- Use CSS Modules para estilos específicos
+
 ---
 
-**💡 Dica: Sempre teste suas mudanças localmente antes de commitar!**
+**💡 Dica: O novo sistema é mais estruturado e performático. Teste sempre os filtros obrigatórios primeiro!**
+
+

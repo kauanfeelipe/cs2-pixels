@@ -2,7 +2,7 @@
 
 ## 🎯 Objetivo do Projeto
 
-**CS2 Pixels** é uma plataforma web que permite aos jogadores de Counter-Strike 2 encontrar rapidamente vídeos de jogadas específicas (pixels) através de uma busca por texto. O sistema funciona como um "YouTube" especializado para CS2, onde cada vídeo é categorizado com tags específicas para facilitar a busca.
+**CS2 Pixels** é uma plataforma web que permite aos jogadores de Counter-Strike 2 encontrarem rapidamente vídeos de jogadas específicas através de um sistema de busca estruturado com filtros. O sistema funciona como um "YouTube" especializado para CS2, onde cada vídeo é categorizado com metadados específicos para facilitar a busca precisa.
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -25,8 +25,8 @@
 cs2-pixels/
 ├── src/
 │   ├── app/                    # App Router do Next.js
-│   │   ├── page.tsx           # Página principal (busca)
-│   │   ├── api/search/        # API de busca
+│   │   ├── page.tsx           # Página principal (sistema de busca)
+│   │   ├── api/search/        # API de busca otimizada
 │   │   └── admin/             # Área administrativa
 │   │       ├── login/         # Login de administradores
 │   │       └── dashboard/     # Painel para adicionar vídeos
@@ -62,30 +62,39 @@ npm run dev
 
 Acesse: http://localhost:3000
 
-## 🔍 Como Funciona a Busca
+## 🔍 Como Funciona o Novo Sistema de Busca
 
-### 1. Interface do Usuário
-- O usuário digita uma descrição da jogada (ex: "Mirage base TR smokar janela")
-- O sistema processa o texto e extrai palavras-chave
-- Busca no banco de dados por vídeos com tags correspondentes
+### 1. Interface Dividida
+- **Painel Esquerdo (30%)**: Controles de busca e informações
+- **Painel Direito (70%)**: Área de visualização do vídeo
 
-### 2. Processamento da Busca
+### 2. Filtros Estruturados
+- **Mapa**: Dropdown com opções (Mirage, Inferno, Dust 2, Nuke, Overpass, Vertigo, Ancient)
+- **Ação**: Dropdown com tipos (Smoke, Flash, Molotov, HE Grenade)
+- **Texto Livre**: Campo opcional para posição, destino ou detalhes específicos
+
+### 3. Processamento da Busca
 ```typescript
-// O sistema divide o texto em palavras-chave
-const keywords = searchTerm
-  .toLowerCase()
-  .split(/\s+/)                    // Divide por espaços
-  .filter((word) => word.length > 2); // Remove palavras muito pequenas
+// O sistema agora envia dados estruturados para a API
+const searchData = {
+  mapa: selectedMap,        // Ex: "mirage"
+  acao: selectedAction,     // Ex: "smoke"
+  textoBusca: searchTerm    // Ex: "base tr janela" (opcional)
+};
 ```
 
-### 3. Consulta no Firestore
+### 4. Consulta Otimizada no Firestore
 ```typescript
-// Busca em documentos onde o array 'tags' contenha qualquer palavra-chave
-const q = query(
-  videosCollection,
-  where('tags', 'array-contains-any', keywords),
-  limit(1)
-);
+// Busca por filtros obrigatórios + texto opcional
+const queryConstraints = [
+  where('mapa', '==', mapa.toLowerCase()),
+  where('acao', '==', acao.toLowerCase()),
+];
+
+// Se houver texto, adiciona busca por tags
+if (textKeywords.length > 0) {
+  queryConstraints.push(where('tags', 'array-contains-any', textKeywords));
+}
 ```
 
 ## 👨‍💼 Sistema Administrativo
@@ -117,22 +126,23 @@ interface VideoData {
 ## 🎨 Componentes Principais
 
 ### 1. Página Principal (`page.tsx`)
-- Formulário de busca responsivo
-- Estados para loading, erro e resultado
-- Player de vídeo integrado
-- Tratamento de erros amigável
+- **Interface dividida** com painéis esquerdo e direito
+- **Filtros estruturados** para mapa e ação
+- **Campo de texto opcional** para refinamento da busca
+- **Estados para filtros** e resultados
+- **Player de vídeo integrado** com controles avançados
 
 ### 2. API de Busca (`/api/search`)
-- Processamento de texto de entrada
-- Consulta otimizada no Firestore
-- Tratamento de erros HTTP
-- Resposta padronizada
+- **Recebe dados estruturados** (mapa, acao, textoBusca)
+- **Validação de filtros obrigatórios** (mapa e acao)
+- **Busca otimizada** por filtros principais + tags opcionais
+- **Tratamento de erros HTTP** com mensagens específicas
 
 ### 3. Dashboard Admin
-- Formulário de upload com validação
-- Upload progressivo com barra de progresso
-- Sistema de feedback para o usuário
-- Logout integrado
+- **Formulário de upload** com validação
+- **Upload progressivo** com barra de progresso
+- **Sistema de feedback** para o usuário
+- **Logout integrado**
 
 ## 🔧 Tecnologias e Bibliotecas
 
@@ -160,8 +170,14 @@ interface VideoData {
 
 ### 2. Estrutura de Estados
 ```typescript
-// Estados relacionados agrupados
+// Estados para filtros obrigatórios
+const [selectedMap, setSelectedMap] = useState('mirage');
+const [selectedAction, setSelectedAction] = useState('smoke');
+
+// Estado para texto opcional
 const [searchTerm, setSearchTerm] = useState('');
+
+// Estados de resultado e controle
 const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
 const [isLoading, setIsLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
@@ -185,9 +201,9 @@ const [error, setError] = useState<string | null>(null);
 - Limite de upload configurado no Firebase
 
 ### 3. Performance
-- Limite de 1 resultado por busca (otimização)
+- **Busca otimizada** por filtros principais primeiro
+- **Texto opcional** para refinamento quando necessário
 - Upload progressivo para arquivos grandes
-- Lazy loading de componentes quando possível
 
 ## 🔄 Fluxo de Desenvolvimento
 
@@ -199,14 +215,14 @@ const [error, setError] = useState<string | null>(null);
 5. Crie um Pull Request
 
 ### 2. Para Modificar a Busca
-- Edite `src/app/api/search/route.ts`
-- Modifique a lógica de processamento de palavras-chave
-- Ajuste as consultas no Firestore conforme necessário
+- **Algoritmo**: Edite `src/app/api/search/route.ts`
+- **Interface**: Modifique `src/app/page.tsx`
+- **Estilos**: Ajuste `src/app/page.module.css`
 
 ### 3. Para Alterar a Interface
-- Modifique os componentes React em `src/app/`
-- Ajuste os estilos nos arquivos `.module.css`
-- Mantenha a responsividade e acessibilidade
+- **Layout**: Modifique a estrutura de painéis em `src/app/page.tsx`
+- **Filtros**: Ajuste os dropdowns e campos de entrada
+- **Estilos**: Modifique os arquivos `.module.css`
 
 ## 📚 Recursos de Aprendizado
 
