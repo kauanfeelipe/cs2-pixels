@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     // ETAPA 1: EXTRAÇÃO E VALIDAÇÃO DOS DADOS DE ENTRADA (ATUALIZADA)
     // ============================================================================
     const body = await req.json();
-    
+
     // MUDANÇA: Desestruturamos o novo objeto com mapa, acao e textoBusca
     const { mapa, acao, textoBusca }: { mapa: string; acao: string; textoBusca: string } = body;
 
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     const videoData = querySnapshot.docs[0].data();
 
     return NextResponse.json(videoData, { status: 200 });
-    
+
   } catch (error) {
     console.error('Erro na API de busca:', error);
     return NextResponse.json(
