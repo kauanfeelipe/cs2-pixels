@@ -1,11 +1,11 @@
-// src/app/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, ChangeEvent, FormEvent } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import styles from './page.module.css';
 import Link from 'next/link';
 
+// Interface for the video result data structure
 interface VideoResult {
   url_video: string;
   mapa: string;
@@ -14,42 +14,65 @@ interface VideoResult {
   destino: string;
 }
 
+// Interface for our unified search form state
+interface SearchState {
+  map: string;
+  action: string;
+  searchText: string;
+}
+
 export default function Home() {
-  const [defatultSelectedMap, setDefatultSelectedMap] = useState('mirage');
-  const [defatultSelectedAction, setDefatultSelectedAction] = useState('smoke');
+  // ============================================================================
+  // COMPONENT STATE (REFACTORED)
+  // ============================================================================
+  // All form filters and the text input now live in a single state object.
+  const [searchState, setSearchState] = useState<SearchState>({
+    map: 'mirage',
+    action: 'smoke',
+    searchText: '',
+  });
 
-  const [searchTerm, setSearchTerm] = useState('');
-
+  // State for the search result and UI feedback
   const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Generic handler to update our search state object
+  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setSearchState(prevState => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
 
-  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+  // ============================================================================
+  // MAIN SEARCH FUNCTION
+  // ============================================================================
+  const handleSearch = async (event: FormEvent) => {
     event.preventDefault();
-
-
+    
     setIsLoading(true);
     setVideoResult(null);
     setError(null);
 
     try {
+      // We send the unified state object directly to the API
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          mapa: defatultSelectedMap,
-          acao: defatultSelectedAction,
-          textoBusca: searchTerm,
+            mapa: searchState.map,
+            acao: searchState.action,
+            textoBusca: searchState.searchText,
         }),
       });
 
-
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'An error occurred while searching.');
+        throw new Error(errorData.message || 'An error occurred during the search.');
       }
 
       const data: VideoResult = await response.json();
@@ -64,10 +87,9 @@ export default function Home() {
 
   return (
     <main className={styles.main}>
-      { }
       <div className={styles.splitScreen}>
 
-        { }
+        {/* LEFT PANEL: Controls and Information */}
         <div className={styles.leftPanel}>
           <div className={styles.leftPanelContent}>
             <h1 className={styles.title}>
@@ -79,8 +101,9 @@ export default function Home() {
 
             <form onSubmit={handleSearch} className={styles.searchHub}>
               <select
-                value={defatultSelectedMap}
-                onChange={(e) => setDefatultSelectedMap(e.target.value)}
+                name="map" // 'name' property is crucial for the handler
+                value={searchState.map}
+                onChange={handleFilterChange}
                 className={styles.filterSelect}
               >
                 <option value="mirage">Mirage</option>
@@ -93,21 +116,23 @@ export default function Home() {
               </select>
 
               <select
-                value={defatultSelectedMap}
-                onChange={(e) => setDefatultSelectedMap(e.target.value)}
+                name="action" // Correct 'name' property
+                value={searchState.action}
+                onChange={handleFilterChange}
                 className={styles.filterSelect}
               >
                 <option value="smoke">Smoke</option>
                 <option value="flash">Flash</option>
                 <option value="molotov">Molotov</option>
-                <option value="hegrenade">Grenade</option>
+                <option value="hegrenade">HE Grenade</option>
               </select>
 
               <div className={styles.searchInputContainer}>
                 <input
                   type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  name="searchText" // Correct 'name' property
+                  value={searchState.searchText}
+                  onChange={handleFilterChange}
                   placeholder="Position and destination..."
                   className={styles.searchInput}
                 />
@@ -120,14 +145,14 @@ export default function Home() {
                 </button>
               </div>
             </form>
-
+            
             <footer className={styles.footer}>
-              <Link href="/admin/dashboard">Restrict Access</Link>
+              <Link href="/admin/dashboard">Restricted Access</Link>
             </footer>
           </div>
         </div>
 
-        { }
+        {/* RIGHT PANEL: Video Display Area */}
         <div className={styles.rightPanel}>
           <div className={styles.videoPlaceholder}>
             {isLoading && <div className={styles.loader}></div>}
@@ -139,7 +164,7 @@ export default function Home() {
               </video>
             )}
             {!isLoading && !error && !videoResult && (
-              <p>Select filters and find your pixel.</p>
+              <p>Select the filters to find your pixel.</p>
             )}
           </div>
         </div>
