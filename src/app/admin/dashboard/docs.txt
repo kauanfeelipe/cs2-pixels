@@ -1,0 +1,27 @@
+Dashboard improvements summary (English)
+
+What we implemented in this iteration
+- Full-screen admin dashboard layout with responsive mobile UX (no boxed container).
+- Toolbar with filters (map, action, text) and an Add New Video toggle.
+- Upload form with progress, validation, and clear feedback states.
+- Video table with: inline preview, badges (map and action), tags as chips, and action buttons (edit/delete) with icons.
+- Loading skeletons, empty-state illustration, and global success/error banners.
+- Pagination with Firestore (limit + startAfter) and a Load more button.
+- Custom confirmation dialog for deletions (no browser confirm).
+- Better spacing and visual polish for action buttons.
+- Centered “Sign out to Home” button with helper text and redirect.
+- Logout flow fix to prevent redirecting to the login page when signing out to home.
+- Theming enhancements: borders, subtle shadows, badge colors per action.
+- Translated admin UI to English to match the home page.
+
+Why this matters
+- Faster, clearer management of content by admins with better feedback and discoverability.
+- Scales better with pagination and a cleaner layout.
+- Safer operations with a clear confirmation step and improved logout flow.
+
+Next ideas (nice-to-have)
+- Column sorting and inline edits in the table.
+- Server-side filtering with Firestore indices for large datasets.
+- Thumbnails and media metadata (duration, resolution).
+- Bulk actions and saved filters per admin.
+- KPIs at the top and basic analytics for search terms.

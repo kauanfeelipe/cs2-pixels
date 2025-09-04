@@ -19,6 +19,7 @@ interface SearchState {
   map: string;
   action: string;
   searchText: string;
+  startPosition: string;
 }
 
 export default function Home() {
@@ -30,12 +31,15 @@ export default function Home() {
     map: 'mirage',
     action: 'smoke',
     searchText: '',
+    startPosition: '',
   });
 
   // State for the search result and UI feedback
   const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Generic handler to update our search state object
   const handleFilterChange = (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
@@ -55,6 +59,8 @@ export default function Home() {
     setIsLoading(true);
     setVideoResult(null);
     setError(null);
+    setIsFocused(true);
+    setIsCollapsed(false);
 
     try {
       // We send the unified state object directly to the API
@@ -67,6 +73,7 @@ export default function Home() {
             mapa: searchState.map,
             acao: searchState.action,
             textoBusca: searchState.searchText,
+            posicao_inicial: searchState.startPosition,
         }),
       });
 
@@ -85,8 +92,15 @@ export default function Home() {
     }
   };
 
+  const togglePreview = () => setIsCollapsed(prev => !prev);
+
   return (
-    <main className={styles.main}>
+    <main className={`${styles.main} ${isFocused ? styles.focused : ''} ${isCollapsed ? styles.collapsed : ''}`}>
+      <div className={styles.bgCanvas}>
+        <div className={styles.bgLayer} />
+        <div className={styles.bgLayerMirror} />
+        <div className={styles.bgGradientOverlay} />
+      </div>
       <div className={styles.splitScreen}>
 
         {/* LEFT PANEL: Controls and Information */}
@@ -127,6 +141,15 @@ export default function Home() {
                 <option value="hegrenade">HE Grenade</option>
               </select>
 
+              <input
+                type="text"
+                name="startPosition"
+                value={searchState.startPosition}
+                onChange={handleFilterChange}
+                placeholder="Start position "
+                className={styles.searchInput}
+              />
+
               <div className={styles.searchInputContainer}>
                 <input
                   type="text"
@@ -144,6 +167,7 @@ export default function Home() {
                   <MagnifyingGlassIcon className={styles.searchButtonIcon} />
                 </button>
               </div>
+              <p className={styles.use_exemplo}>Exemple: bomb-a,base-ct,base-tr,bomb-b,meio,janelao </p>
             </form>
             
             <footer className={styles.footer}>

@@ -25,7 +25,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/admin/dashboard');
     } catch (err) {
-      setError('Falha no login. Verifique suas credenciais.');
+      setError('Login failed. Check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -34,11 +34,11 @@ export default function LoginPage() {
   return (
     <main className={styles.main}>
       <div className={styles.loginCard}>
-        <h1 className={styles.title}>Acesso Restrito</h1>
+        <h1 className={styles.title}>Restricted Access</h1>
 
         <form onSubmit={handleLogin}>
           <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>E-mail</label>
+            <label htmlFor="email" className={styles.label}>Email</label>
             <input
               id="email"
               type="email"
@@ -51,7 +51,7 @@ export default function LoginPage() {
           </div>
           
           <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>Senha</label>
+            <label htmlFor="password" className={styles.label}>Password</label>
             <input
               id="password"
               type="password"
@@ -66,13 +66,13 @@ export default function LoginPage() {
           {error && <p className={styles.error}>{error}</p>}
           
           <button type="submit" className={styles.button} disabled={isLoading}>
-            {isLoading ? 'Entrando...' : 'Entrar'}
+            {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
         <Link href="/" className={styles.backLink}>
           <ArrowLeftIcon className={styles.backIcon} />
-          Voltar para a página inicial
+          Back to homepage
         </Link>
       </div>
     </main>

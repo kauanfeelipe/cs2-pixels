@@ -11,8 +11,8 @@ export async function POST(req: Request) {
     // ============================================================================
     const body = await req.json();
 
-    // MUDANÇA: Desestruturamos o novo objeto com mapa, acao e textoBusca
-    const { mapa, acao, textoBusca }: { mapa: string; acao: string; textoBusca: string } = body;
+    // MUDANÇA: Desestruturamos também posicao_inicial (opcional)
+    const { mapa, acao, textoBusca, posicao_inicial }: { mapa: string; acao: string; textoBusca: string; posicao_inicial?: string } = body;
 
     // Validação dos filtros obrigatórios
     if (!mapa || !acao) {
@@ -42,6 +42,11 @@ export async function POST(req: Request) {
       where('mapa', '==', mapa.toLowerCase()),
       where('acao', '==', acao.toLowerCase()),
     ];
+
+    // Filtro opcional por posição inicial (igualdade exata, normalizada)
+    if (posicao_inicial && posicao_inicial.trim().length > 0) {
+      queryConstraints.push(where('posicao_inicial', '==', posicao_inicial.toLowerCase().trim()));
+    }
 
     // Se o usuário digitou algo no campo de texto, adicionamos o filtro de tags.
     // Isso torna a busca por tags opcional, mas refina o resultado se presente.
