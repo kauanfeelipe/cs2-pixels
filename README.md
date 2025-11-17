@@ -1,5 +1,13 @@
 #  CS2 Pixels
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2086ca8c-d914-4215-ab3a-40cf9afb4313" width="30%" />
+  <img src="https://github.com/user-attachments/assets/432b9bcb-e1e7-4fef-835f-3657aa8cc025" width="30%" />
+  <img src="https://github.com/user-attachments/assets/94df47c1-9e51-402a-b012-5eda51c13e50" width="30%" />
+</p>
+
+
+
 ## Contexto do Projeto
 
 Este projeto foi desenvolvido como trabalho acadêmico para a disciplina de **Análise/Projetos de Sistema**, apresentado durante o semestre. O objetivo da atividade era desenvolver um sistema completo que envolvesse **banco de dados** e **programação**, demonstrando a aplicação prática dos conceitos estudados em sala de aula.
