@@ -57,7 +57,13 @@ export default function DashboardPage() {
 
   // Função centralizada para buscar vídeos com filtros e paginação.
   const fetchVideos = async (append = false) => {
-    if (!auth.currentUser) return; 
+    // Verifica se o usuário está autenticado
+    if (!auth.currentUser) {
+      console.warn("Usuário não autenticado ao tentar buscar vídeos");
+      setIsFetching(false);
+      return;
+    }
+    
     setIsFetching(true);
     try {
       const videosCollection = collection(db, 'videos');
@@ -81,9 +87,18 @@ export default function DashboardPage() {
       const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
       setLastCursor(lastDoc);
       setHasMore(querySnapshot.docs.length === PAGE_SIZE);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao buscar vídeos:", error);
-      setFeedback({ type: 'error', message: "Failed to load videos." });
+      // Mensagens de erro mais específicas
+      let errorMessage = "Failed to load videos.";
+      if (error?.code === 'permission-denied') {
+        errorMessage = "Permissão negada. Verifique as regras do Firestore e se você está autenticado.";
+      } else if (error?.code === 'unauthenticated') {
+        errorMessage = "Usuário não autenticado. Faça login novamente.";
+      } else if (error?.message) {
+        errorMessage = `Erro ao carregar vídeos: ${error.message}`;
+      }
+      setFeedback({ type: 'error', message: errorMessage });
     } finally {
       setIsFetching(false);
     }
@@ -183,22 +198,81 @@ export default function DashboardPage() {
     setConfirmState({ open: true, target: video });
   };
 
+  // Função helper para extrair o caminho do arquivo da URL do Firebase Storage
+  const extractFilePathFromUrl = (url: string): string => {
+    try {
+      // A URL do Firebase Storage tem o formato:
+      // https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{path}?alt=media&token={token}
+      const urlObj = new URL(url);
+      const pathMatch = urlObj.pathname.match(/\/o\/(.+)$/);
+      if (pathMatch && pathMatch[1]) {
+        // Decodifica o caminho que está URL-encoded
+        return decodeURIComponent(pathMatch[1]);
+      }
+      // Se não conseguir extrair, tenta usar a URL diretamente (pode funcionar em alguns casos)
+      return url;
+    } catch (error) {
+      console.error("Erro ao extrair caminho da URL:", error);
+      // Fallback: retorna a URL original
+      return url;
+    }
+  };
+
   const confirmDelete = async () => {
     const video = confirmState.target;
     if (!video) return setConfirmState({ open: false, target: null });
-      setIsProcessing(true);
-      setFeedback(null);
-      try {
-        const fileRef = ref(storage, video.url_video);
-        await deleteObject(fileRef);
-        await deleteDoc(doc(db, 'videos', video.id));
-        fetchVideos();
-        setFeedback({ type: 'success', message: 'Video deleted successfully.' });
-      } catch (error) {
-        console.error("Erro ao excluir: ", error);
-        setFeedback({ type: 'error', message: 'Failed to delete the video.' });
-      } finally {
-        setIsProcessing(false);
+    
+    // Verifica se o usuário está autenticado
+    if (!auth.currentUser) {
+      setFeedback({ type: 'error', message: 'Usuário não autenticado. Faça login novamente.' });
+      setConfirmState({ open: false, target: null });
+      router.push('/admin/login');
+      return;
+    }
+    
+    setIsProcessing(true);
+    setFeedback(null);
+    try {
+      // Extrai o caminho do arquivo da URL completa
+      const filePath = extractFilePathFromUrl(video.url_video);
+      console.log('Tentando deletar arquivo:', filePath);
+      console.log('Usuário autenticado:', auth.currentUser?.email);
+      
+      const fileRef = ref(storage, filePath);
+      
+      // Tenta deletar o arquivo do Storage primeiro
+      await deleteObject(fileRef);
+      console.log('Arquivo deletado do Storage com sucesso');
+      
+      // Depois deleta o documento do Firestore
+      await deleteDoc(doc(db, 'videos', video.id));
+      console.log('Documento deletado do Firestore com sucesso');
+      
+      // Atualiza a lista de vídeos
+      fetchVideos();
+      setFeedback({ type: 'success', message: 'Video deleted successfully.' });
+    } catch (error: any) {
+      console.error("Erro ao excluir: ", error);
+      console.error("Código do erro: ", error?.code);
+      console.error("Mensagem do erro: ", error?.message);
+      
+      // Mensagem de erro mais detalhada
+      let errorMessage = 'Failed to delete the video.';
+      
+      if (error?.code === 'storage/object-not-found') {
+        errorMessage = 'Arquivo não encontrado no Storage.';
+      } else if (error?.code === 'storage/unauthorized' || error?.code === 'permission-denied') {
+        errorMessage = 'Permissão negada. Verifique se você está autenticado e se as regras do Firebase Storage permitem a deleção para usuários autenticados.';
+      } else if (error?.code === 'unauthenticated') {
+        errorMessage = 'Sessão expirada. Faça login novamente.';
+        router.push('/admin/login');
+      } else if (error?.message) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      setFeedback({ type: 'error', message: errorMessage });
+    } finally {
+      setIsProcessing(false);
       setConfirmState({ open: false, target: null });
     }
   };

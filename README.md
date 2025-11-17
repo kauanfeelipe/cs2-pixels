@@ -1,263 +1,206 @@
-# CS2 Pixels - Documentação do Projeto
+#  CS2 Pixels
 
-## 🎯 Objetivo do Projeto
+## Contexto do Projeto
 
-**CS2 Pixels** é uma plataforma web que permite aos jogadores de Counter-Strike 2 encontrarem rapidamente vídeos de jogadas específicas através de um sistema de busca estruturado com filtros. O sistema funciona como um "YouTube" especializado para CS2, onde cada vídeo é categorizado com metadados específicos para facilitar a busca precisa.
+Este projeto foi desenvolvido como trabalho acadêmico para a disciplina de **Análise/Projetos de Sistema**, apresentado durante o semestre. O objetivo da atividade era desenvolver um sistema completo que envolvesse **banco de dados** e **programação**, demonstrando a aplicação prática dos conceitos estudados em sala de aula.
 
-## 🏗️ Arquitetura do Sistema
+O **CS2 Pixels** foi escolhido como tema por combinar diferentes tecnologias e desafios técnicos, incluindo:
+- Desenvolvimento de interface web moderna
+- Integração com banco de dados NoSQL (Firestore)
+- Gerenciamento de arquivos (Firebase Storage)
+- Sistema de autenticação e autorização
+- APIs RESTful para comunicação entre frontend e backend
 
-### Frontend
-- **Next.js 15** com App Router (estrutura moderna)
-- **React 19** com TypeScript para tipagem segura
-- **CSS Modules** para estilização isolada
-- **Heroicons** para ícones
+## Visão Geral
 
-### Backend
-- **API Routes** do Next.js para endpoints
-- **Firebase** como banco de dados e autenticação
-  - Firestore (banco de dados)
-  - Storage (armazenamento de vídeos)
-  - Auth (sistema de login)
+O CS2 Pixels é uma plataforma web para busca e visualização de vídeos de jogadas do Counter-Strike 2. O sistema permite que usuários encontrem vídeos específicos através de filtros estruturados (mapa e ação) e busca por texto livre.
 
-## 📁 Estrutura do Projeto
+## Arquitetura do Sistema
+
+### Tecnologias Utilizadas
+
+- **Frontend**: Next.js 15 com React 19 e TypeScript
+- **Backend**: Next.js API Routes
+- **Banco de Dados**: Firebase Firestore
+- **Armazenamento**: Firebase Storage
+- **Autenticação**: Firebase Authentication
+
+### Estrutura do Projeto
 
 ```
-cs2-pixels/
-├── src/
-│   ├── app/                    # App Router do Next.js
-│   │   ├── page.tsx           # Página principal (sistema de busca)
-│   │   ├── api/search/        # API de busca otimizada
-│   │   └── admin/             # Área administrativa
-│   │       ├── login/         # Login de administradores
-│   │       └── dashboard/     # Painel para adicionar vídeos
-│   └── lib/
-│       └── firebase.ts        # Configuração do Firebase
-├── public/                     # Arquivos estáticos
-└── package.json               # Dependências do projeto
+src/
+├── app/
+│   ├── page.tsx              # Página principal (busca pública)
+│   ├── api/search/route.ts   # API de busca
+│   └── admin/                # Área administrativa
+│       ├── login/            # Autenticação
+│       └── dashboard/        # Gerenciamento de vídeos
+└── lib/
+    └── firebase.ts           # Configuração do Firebase
 ```
 
-## 🚀 Como Executar o Projeto
+## Fluxo de Funcionamento
 
-### 1. Instalação das Dependências
-```bash
-npm install
+### 1. Busca de Vídeos (Público)
+
+**Processo**:
+1. Usuário seleciona mapa e ação nos filtros obrigatórios
+2. Opcionalmente, digita texto para refinar a busca
+3. Sistema envia requisição para a API de busca
+4. API consulta o Firestore com filtros aplicados
+5. Retorna o primeiro vídeo que corresponde aos critérios
+6. Vídeo é exibido no player
+
+**Filtros**:
+- **Obrigatórios**: Mapa e Ação
+- **Opcionais**: Texto livre (processado como palavras-chave para busca em tags)
+
+### 2. Gerenciamento de Vídeos (Admin)
+
+**Processo**:
+1. Administrador faz login no sistema
+2. Acessa o dashboard administrativo
+3. Faz upload de vídeo MP4 com metadados
+4. Sistema salva arquivo no Firebase Storage
+5. Metadados são salvos no Firestore
+6. Vídeo fica disponível para busca
+
+## Estrutura de Dados
+
+### Modelo de Vídeo (Firestore)
+
+Cada documento na coleção `videos` possui:
+
+```typescript
+{
+  id: string;                    // ID único (gerado automaticamente)
+  mapa: string;                  // Nome do mapa (ex: "mirage", "inferno")
+  acao: string;                  // Tipo de ação (ex: "smoke", "flash")
+  posicao_inicial: string;       // Posição inicial do jogador
+  destino: string;               // Local de destino
+  url_video: string;             // URL do vídeo no Storage
+  tags: string[];                // Array de palavras-chave
+  createdAt: Timestamp;          // Data de criação
+}
 ```
 
-### 2. Configuração do Firebase
-Crie um arquivo `.env.local` na raiz do projeto com suas credenciais:
+### Sistema de Busca
+
+A busca funciona em camadas:
+
+1. **Filtros obrigatórios**: Reduzem o conjunto de dados por mapa e ação
+2. **Filtro por tags**: Refina resultados quando texto é fornecido
+3. **Limite**: Retorna apenas o primeiro resultado encontrado
+
+**Vantagens**:
+- Performance otimizada com filtros primários
+- Precisão na busca por campos específicos
+- Flexibilidade com texto opcional
+
+## Componentes Principais
+
+### Página Principal (`page.tsx`)
+
+Interface dividida em dois painéis:
+- **Painel Esquerdo (30%)**: Filtros de busca e controles
+- **Painel Direito (70%)**: Visualização do vídeo
+
+**Estados gerenciados**:
+- Filtros de busca (mapa, ação, texto)
+- Resultado da busca
+- Estados de loading e erro
+
+### API de Busca (`api/search/route.ts`)
+
+Endpoint POST que processa requisições de busca:
+- Valida dados de entrada
+- Processa texto em palavras-chave
+- Constrói query otimizada no Firestore
+- Retorna resultado ou mensagem de erro
+
+**Códigos de resposta**:
+- `200`: Vídeo encontrado
+- `400`: Dados inválidos
+- `404`: Nenhum vídeo encontrado
+- `500`: Erro interno do servidor
+
+### Dashboard Administrativo
+
+**Funcionalidades**:
+- Upload de vídeos com barra de progresso
+- Listagem de vídeos com paginação
+- Edição de metadados
+- Exclusão de vídeos (arquivo + registro)
+
+**Proteção**:
+- Autenticação obrigatória via Firebase Auth
+- Redirecionamento automático para login se não autenticado
+
+## Autenticação
+
+O sistema utiliza Firebase Authentication para controle de acesso:
+
+- **Login**: Email e senha no endpoint `/admin/login`
+- **Proteção**: Rotas administrativas verificam autenticação
+- **Sessão**: Mantida pelo Firebase até logout explícito
+
+## Tratamento de Erros
+
+O sistema trata os seguintes tipos de erro:
+
+1. **Validação (400)**: Campos obrigatórios ausentes
+2. **Não encontrado (404)**: Vídeo não existe com os critérios
+3. **Servidor (500)**: Erro interno do sistema
+4. **Rede**: Falha na comunicação com APIs
+
+Todos os erros retornam mensagens claras ao usuário.
+
+## Configuração
+
+### Variáveis de Ambiente
+
+Arquivo `.env.local` na raiz do projeto:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=sua_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=seu_projeto.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=seu_projeto_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=seu_projeto.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=seu_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=seu_app_id
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 ```
 
-### 3. Executar o Projeto
-```bash
-npm run dev
-```
+**Nota**: O prefixo `NEXT_PUBLIC_` torna as variáveis acessíveis no frontend.
 
-Acesse: http://localhost:3000
+## Otimizações
 
-## 🔍 Como Funciona o Novo Sistema de Busca
+### Performance
+- Busca em camadas reduz volume de dados processados
+- Índices compostos no Firestore para consultas rápidas
+- Upload progressivo com feedback visual
+- Carregamento sob demanda de componentes
 
-### 1. Interface Dividida
-- **Painel Esquerdo (30%)**: Controles de busca e informações
-- **Painel Direito (70%)**: Área de visualização do vídeo
+### Segurança
+- Validação de entrada em todas as requisições
+- Autenticação obrigatória para operações administrativas
+- Sanitização de dados antes de persistência
 
-### 2. Filtros Estruturados
-- **Mapa**: Dropdown com opções (Mirage, Inferno, Dust 2, Nuke, Overpass, Vertigo, Ancient)
-- **Ação**: Dropdown com tipos (Smoke, Flash, Molotov, HE Grenade)
-- **Texto Livre**: Campo opcional para posição, destino ou detalhes específicos
+## Manutenção e Desenvolvimento
 
-### 3. Processamento da Busca
-```typescript
-// O sistema agora envia dados estruturados para a API
-const searchData = {
-  mapa: selectedMap,        // Ex: "mirage"
-  acao: selectedAction,     // Ex: "smoke"
-  textoBusca: searchTerm    // Ex: "base tr janela" (opcional)
-};
-```
+### Modificar Busca
+- **Lógica**: `src/app/api/search/route.ts`
+- **Interface**: `src/app/page.tsx`
+- **Estilos**: `src/app/page.module.css`
 
-### 4. Consulta Otimizada no Firestore
-```typescript
-// Busca por filtros obrigatórios + texto opcional
-const queryConstraints = [
-  where('mapa', '==', mapa.toLowerCase()),
-  where('acao', '==', acao.toLowerCase()),
-];
+### Adicionar Funcionalidades
+1. Analisar código existente
+2. Seguir padrões de nomenclatura
+3. Testar localmente
+4. Documentar alterações
 
-// Se houver texto, adiciona busca por tags
-if (textKeywords.length > 0) {
-  queryConstraints.push(where('tags', 'array-contains-any', textKeywords));
-}
-```
+## Referências
 
-## 👨‍💼 Sistema Administrativo
-
-### Acesso
-- URL: `/admin/login`
-- Sistema de autenticação com Firebase Auth
-- Apenas usuários autorizados podem acessar
-
-### Funcionalidades
-- **Upload de Vídeos**: Envio de arquivos MP4 para o Firebase Storage
-- **Metadados**: Preenchimento de informações como mapa, posição, ação, destino
-- **Tags**: Sistema de categorização para facilitar a busca
-- **Progresso**: Barra de progresso durante o upload
-
-### Estrutura dos Dados
-```typescript
-interface VideoData {
-  mapa: string;              // Ex: "mirage", "inferno"
-  posicao_inicial: string;   // Ex: "base TR", "CT spawn"
-  acao: string;              // Ex: "smoke", "flash", "molotov"
-  destino: string;           // Ex: "janela", "mid", "B site"
-  url_video: string;         // URL do vídeo no Firebase Storage
-  tags: string[];            // Array de tags para busca
-  createdAt: Timestamp;      // Data de criação
-}
-```
-
-## 🎨 Componentes Principais
-
-### 1. Página Principal (`page.tsx`)
-- **Interface dividida** com painéis esquerdo e direito
-- **Filtros estruturados** para mapa e ação
-- **Campo de texto opcional** para refinamento da busca
-- **Estados para filtros** e resultados
-- **Player de vídeo integrado** com controles avançados
-
-### 2. API de Busca (`/api/search`)
-- **Recebe dados estruturados** (mapa, acao, textoBusca)
-- **Validação de filtros obrigatórios** (mapa e acao)
-- **Busca otimizada** por filtros principais + tags opcionais
-- **Tratamento de erros HTTP** com mensagens específicas
-
-### 3. Dashboard Admin
-- **Formulário de upload** com validação
-- **Upload progressivo** com barra de progresso
-- **Sistema de feedback** para o usuário
-- **Logout integrado**
-
-## 🔧 Tecnologias e Bibliotecas
-
-### Core
-- **Next.js 15**: Framework React com SSR e API Routes
-- **React 19**: Biblioteca para interfaces de usuário
-- **TypeScript**: Tipagem estática para JavaScript
-
-### Firebase
-- **Firestore**: Banco de dados NoSQL
-- **Storage**: Armazenamento de arquivos
-- **Auth**: Autenticação de usuários
-
-### UI/UX
-- **Heroicons**: Ícones SVG de alta qualidade
-- **CSS Modules**: Estilização com escopo isolado
-- **Responsive Design**: Interface adaptável a diferentes dispositivos
-
-## 📝 Padrões de Código
-
-### 1. Nomenclatura
-- **Componentes**: PascalCase (ex: `DashboardPage`)
-- **Funções**: camelCase (ex: `handleSearch`)
-- **Arquivos**: kebab-case (ex: `dashboard.module.css`)
-
-### 2. Estrutura de Estados
-```typescript
-// Estados para filtros obrigatórios
-const [selectedMap, setSelectedMap] = useState('mirage');
-const [selectedAction, setSelectedAction] = useState('smoke');
-
-// Estado para texto opcional
-const [searchTerm, setSearchTerm] = useState('');
-
-// Estados de resultado e controle
-const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
-const [isLoading, setIsLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
-```
-
-### 3. Tratamento de Erros
-- Try-catch em operações assíncronas
-- Estados de erro específicos
-- Mensagens amigáveis para o usuário
-
-## 🚨 Pontos de Atenção
-
-### 1. Variáveis de Ambiente
-- **NUNCA** commitar o arquivo `.env.local`
-- Todas as credenciais do Firebase devem estar nas variáveis de ambiente
-- Prefixo `NEXT_PUBLIC_` é necessário para variáveis acessíveis no frontend
-
-### 2. Segurança
-- Apenas usuários autenticados podem acessar o dashboard
-- Validação de entrada em todas as APIs
-- Limite de upload configurado no Firebase
-
-### 3. Performance
-- **Busca otimizada** por filtros principais primeiro
-- **Texto opcional** para refinamento quando necessário
-- Upload progressivo para arquivos grandes
-
-## 🔄 Fluxo de Desenvolvimento
-
-### 1. Para Adicionar Novas Funcionalidades
-1. Crie um branch específico para a feature
-2. Implemente a funcionalidade seguindo os padrões do projeto
-3. Teste localmente com `npm run dev`
-4. Faça commit com mensagem descritiva
-5. Crie um Pull Request
-
-### 2. Para Modificar a Busca
-- **Algoritmo**: Edite `src/app/api/search/route.ts`
-- **Interface**: Modifique `src/app/page.tsx`
-- **Estilos**: Ajuste `src/app/page.module.css`
-
-### 3. Para Alterar a Interface
-- **Layout**: Modifique a estrutura de painéis em `src/app/page.tsx`
-- **Filtros**: Ajuste os dropdowns e campos de entrada
-- **Estilos**: Modifique os arquivos `.module.css`
-
-## 📚 Recursos de Aprendizado
-
-### Next.js
-- [Documentação Oficial](https://nextjs.org/docs)
-- [App Router](https://nextjs.org/docs/app)
-- [API Routes](https://nextjs.org/docs/api-routes/introduction)
-
-### Firebase
-- [Firestore](https://firebase.google.com/docs/firestore)
-- [Storage](https://firebase.google.com/docs/storage)
-- [Auth](https://firebase.google.com/docs/auth)
-
-### React
-- [Hooks](https://react.dev/reference/react/hooks)
-- [TypeScript](https://www.typescriptlang.org/docs/)
-
-## 🤝 Contribuição
-
-Este é um projeto de estudo colaborativo. Para contribuir:
-
-1. **Entenda o código** antes de modificar
-2. **Mantenha a consistência** com os padrões existentes
-3. **Teste suas mudanças** antes de commitar
-4. **Documente alterações** importantes
-5. **Peça ajuda** quando necessário
-
-## 📞 Suporte
-
-Para dúvidas ou problemas:
-- Verifique a documentação acima
-- Analise o código existente
-- Consulte a documentação das tecnologias utilizadas
-- Discuta com a equipe antes de implementar mudanças grandes
-
----
-
-**Desenvolvido com ❤️ para aprendizado colaborativo em desenvolvimento web**
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)

@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Regras específicas para a pasta 'videos'
+    // Permite leitura pública e escrita apenas para usuários autenticados
+    match /videos/{videoId} {
+      // Permite leitura para todos (público)
+      allow read: if true;
+      
+      // Permite escrita (upload, update, delete) apenas para usuários autenticados
+      allow write: if request.auth != null;
+    }
+    
+    // Regra genérica para outras pastas (se necessário)
+    match /{allPaths=**} {
+      // Permite leitura para todos
+      allow read: if true;
+      
+      // Permite escrita apenas para usuários autenticados
+      allow write: if request.auth != null;
+    }
+  }
+}
+

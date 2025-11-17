@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regras específicas para a coleção 'videos'
+    // Permite leitura para todos (público)
+    // Permite escrita apenas para usuários autenticados
+    match /videos/{videoId} {
+      // Permite leitura para todos (incluindo queries com orderBy)
+      allow read: if true;
+      
+      // Permite escrita (create, update, delete) apenas para usuários autenticados
+      allow write: if request.auth != null;
+    }
+    
+    // Regra genérica para outras coleções (se necessário)
+    // Mantém a compatibilidade com outras partes do sistema
+    match /{document=**} {
+      // Permite leitura para todos
+      allow read: if true;
+      
+      // Permite escrita apenas para usuários autenticados
+      allow write: if request.auth != null;
+    }
+  }
+}
+
